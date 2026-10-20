@@ -1,6 +1,23 @@
 # TypeSafe AI for OpenClaw
 
-Official external plugin for typed decisions with hosted TypeSafe AI Jev models
+## Fork provenance and version
+
+This repository is an independently maintained fork of the
+[`extensions/typesafe` directory in OpenClaw v2026.10.5](https://github.com/openclaw/openclaw/tree/v2026.10.5/extensions/typesafe),
+maintained under `ani6439walc`. It is not the official OpenClaw distribution.
+
+- **Upstream baseline:** OpenClaw `v2026.10.5`.
+- **Upstream commit:** `1b58cb9a1b4f4353e1add63c8506db4d890962e8`.
+- **Current plugin version:** `2026.10.5`, inherited unchanged from upstream `package.json`.
+- **Fork release:** No separate fork release or version tag has been published yet.
+
+The initial import preserved all 24 upstream files byte-for-byte. Subsequent fork
+changes are recorded in this repository's Git history. Retain the upstream
+copyright notice when maintaining or redistributing this fork.
+
+## Overview
+
+The upstream plugin provides typed decisions with hosted TypeSafe AI Jev models
 or a local Kev System One server.
 It provides Choice, Score, and Boolean judgments through OpenClaw's shared
 decision-model API. Core supplies the provider-neutral `decision_evaluate` agent
