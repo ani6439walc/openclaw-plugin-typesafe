@@ -12,7 +12,10 @@ vi.mock("openclaw/plugin-sdk/secret-input-runtime", () => ({
 const batch: DecisionBatch = {
   state: { evidence: "synthetic only" },
   questions: {
-    q: { type: "boolean", instructions: "Does the evidence satisfy the criterion?" },
+    q: {
+      type: "boolean",
+      instructions: "Does the evidence satisfy the criterion?",
+    },
     c: { type: "choice", criteria: { keep: "Keep", skip: "Skip" } },
     s: { type: "score", criteria: ["Low", "High"] },
   },
@@ -41,7 +44,11 @@ const response = {
 function registeredProvider(config: Record<string, unknown> = {}) {
   const registerDecisionProvider = vi.fn<OpenClawPluginApi["registerDecisionProvider"]>();
   plugin.register({
-    runtime: { config: { current: () => ({ plugins: { entries: { typesafe: { config } } } }) } },
+    runtime: {
+      config: {
+        current: () => ({ plugins: { entries: { typesafe: { config } } } }),
+      },
+    },
     registerDecisionProvider,
   } as unknown as OpenClawPluginApi);
   const provider = registerDecisionProvider.mock.calls[0]?.[0];
@@ -57,7 +64,10 @@ const context = (signal = new AbortController().signal) => ({
 });
 
 beforeEach(() => {
-  vi.mocked(getPreparedPluginSecretInput).mockReturnValue({ revision: 1, value: "synthetic-key" });
+  vi.mocked(getPreparedPluginSecretInput).mockReturnValue({
+    revision: 1,
+    value: "synthetic-key",
+  });
 });
 afterEach(() => {
   vi.restoreAllMocks();
@@ -80,7 +90,12 @@ it("preserves mixed answers, rounded estimates, and the selected model through r
       answers: {
         q: { type: "boolean", probabilityTrue: 0.37 },
         c: response.answers.c,
-        s: { type: "score", score: 0.607, confidence: 0.5, probabilities: [0.4, 0.6] },
+        s: {
+          type: "score",
+          score: 0.607,
+          confidence: 0.5,
+          probabilities: [0.4, 0.6],
+        },
       },
       usage: { inputTokens: 12, outputTokens: 3 },
     },
@@ -95,7 +110,10 @@ it("preserves mixed answers, rounded estimates, and the selected model through r
   assert(typeof body === "string");
   expect(JSON.parse(body)).toEqual({
     ...batch,
-    questions: { ...batch.questions, q: { ...batch.questions.q, type: "noul" } },
+    questions: {
+      ...batch.questions,
+      q: { ...batch.questions.q, type: "noul" },
+    },
     model: "jev-agent-selected",
   });
 });
@@ -139,7 +157,10 @@ it("observes prepared credential rotation, loss, recovery, and caller cancellati
     undefined,
     "synthetic-recovered",
   ].entries()) {
-    vi.mocked(getPreparedPluginSecretInput).mockReturnValue({ revision, value: key });
+    vi.mocked(getPreparedPluginSecretInput).mockReturnValue({
+      revision,
+      value: key,
+    });
     expect(provider.isReady?.()).toBe(Boolean(key));
     fetch.mockClear();
     const outcome = await provider.evaluate(batch, context(controller.signal));
@@ -151,7 +172,10 @@ it("observes prepared credential rotation, loss, recovery, and caller cancellati
       expect(JSON.stringify(outcome)).not.toContain(key);
       expect(fetch).toHaveBeenCalledOnce();
     } else {
-      expect(outcome).toEqual({ status: "unavailable", reason: "credentials-unavailable" });
+      expect(outcome).toEqual({
+        status: "unavailable",
+        reason: "credentials-unavailable",
+      });
       expect(fetch).not.toHaveBeenCalled();
     }
   }
@@ -164,7 +188,10 @@ it("observes prepared credential rotation, loss, recovery, and caller cancellati
 });
 
 it.each<DecisionBatch>([
-  { state: null, questions: { s: { type: "score", criteria: Array(11).fill("level") } } },
+  {
+    state: null,
+    questions: { s: { type: "score", criteria: Array(11).fill("level") } },
+  },
   {
     state: null,
     questions: {
@@ -232,7 +259,10 @@ it("limits an in-flight request to the budget remaining after preparation", asyn
     expect(signal.aborted).toBe(false);
     await vi.advanceTimersByTimeAsync(1);
     expect(signal.aborted).toBe(true);
-    await expect(pending).resolves.toEqual({ status: "unavailable", reason: "transport" });
+    await expect(pending).resolves.toEqual({
+      status: "unavailable",
+      reason: "transport",
+    });
   } finally {
     controller.abort();
     await pending.catch(() => {});

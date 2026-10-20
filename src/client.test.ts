@@ -8,7 +8,11 @@ const input = {
   model: "jev-test",
   state: { text: "synthetic state" },
   questions: {
-    route: { type: "choice", instructions: "Choose", criteria: { keep: "Keep", skip: "Skip" } },
+    route: {
+      type: "choice",
+      instructions: "Choose",
+      criteria: { keep: "Keep", skip: "Skip" },
+    },
     quality: { type: "score", instructions: "Rate", criteria: ["Low", "High"] },
     relevant: { type: "noul", instructions: "Relevant?" },
   },
@@ -51,7 +55,9 @@ describe("TypeSafe HTTP evaluation", () => {
     });
     await expect(evaluate(input, config)).rejects.toThrow("TypeSafe transport unavailable");
     mockFetch(async () => new Response("not json"));
-    await expect(evaluate(input, config)).rejects.toMatchObject({ reason: "invalid-response" });
+    await expect(evaluate(input, config)).rejects.toMatchObject({
+      reason: "invalid-response",
+    });
     mockFetch(async () => new Response(JSON.stringify({ ...answer, model: config.apiKey })));
     await expect(evaluate(input, config)).rejects.toThrow("TypeSafe evaluation failed");
   });
@@ -61,7 +67,13 @@ describe("TypeSafe HTTP evaluation", () => {
     await expect(
       evaluate(
         input,
-        runtimeConfig({ apiKey: { source: "env", provider: "default", id: "TYPESAFE_API_KEY" } }),
+        runtimeConfig({
+          apiKey: {
+            source: "env",
+            provider: "default",
+            id: "TYPESAFE_API_KEY",
+          },
+        }),
       ),
     ).rejects.toThrow("API key is missing");
     expect(fetch).not.toHaveBeenCalled();
@@ -114,16 +126,25 @@ describe("bounded contracts", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
   it.each([
-    { ...answer, answers: { ...answer.answers, relevant: { type: "noul", noul: 1.01 } } },
     {
       ...answer,
-      answers: { ...answer.answers, route: { ...answer.answers.route, choice: "other" } },
+      answers: { ...answer.answers, relevant: { type: "noul", noul: 1.01 } },
     },
     {
       ...answer,
       answers: {
         ...answer.answers,
-        route: { ...answer.answers.route, probabilities: { keep: 0.5, other: 0.5 } },
+        route: { ...answer.answers.route, choice: "other" },
+      },
+    },
+    {
+      ...answer,
+      answers: {
+        ...answer.answers,
+        route: {
+          ...answer.answers.route,
+          probabilities: { keep: 0.5, other: 0.5 },
+        },
       },
     },
     {
@@ -133,12 +154,21 @@ describe("bounded contracts", () => {
         route: { ...answer.answers.route, probabilities: { keep: 0, skip: 0 } },
       },
     },
-    { ...answer, answers: { ...answer.answers, quality: { ...answer.answers.quality, score: 2 } } },
     {
       ...answer,
       answers: {
         ...answer.answers,
-        quality: { ...answer.answers.quality, legend: { 0: "Wrong", 1: "High" } },
+        quality: { ...answer.answers.quality, score: 2 },
+      },
+    },
+    {
+      ...answer,
+      answers: {
+        ...answer.answers,
+        quality: {
+          ...answer.answers.quality,
+          legend: { 0: "Wrong", 1: "High" },
+        },
       },
     },
   ])("rejects malformed or mismatched responses", (value) =>

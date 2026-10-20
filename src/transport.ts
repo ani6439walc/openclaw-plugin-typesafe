@@ -6,7 +6,7 @@ import {
 } from "openclaw/plugin-sdk/fetch-runtime";
 import { parseRetryAfterHeaderSeconds } from "openclaw/plugin-sdk/retry-runtime";
 import { fetchWithSsrFGuard } from "openclaw/plugin-sdk/ssrf-runtime";
-import { localBaseUrl } from "./config.js";
+import { localBaseUrl, providerBaseUrl } from "./config.js";
 import { EvaluationError } from "./errors.js";
 import { MAX_JSON_BYTES, type EvaluationInput } from "./schema.js";
 
@@ -86,13 +86,21 @@ export async function requestEvaluation(params: {
   body: EvaluationInput & { model: string };
   apiKey?: string;
   baseUrl?: string;
+  apiBaseUrl?: string;
   timeoutMs: number;
   signal?: AbortSignal;
   deadlineMonotonicMs?: number;
   isAdmissible?: () => boolean;
 }): Promise<unknown> {
   const baseUrl = localBaseUrl(params.baseUrl);
-  const endpoint = baseUrl ? `${baseUrl}/v1/systemone` : ENDPOINT;
+  const apiRoot = params.apiBaseUrl
+    ? providerBaseUrl(params.apiBaseUrl, Boolean(params.apiKey))
+    : undefined;
+  const endpoint = apiRoot
+    ? `${apiRoot}/systemone`
+    : baseUrl
+      ? `${baseUrl}/v1/systemone`
+      : ENDPOINT;
   const body = JSON.stringify(params.body);
   if (Buffer.byteLength(body) > MAX_JSON_BYTES) {
     throw new EvaluationError("TypeSafe request exceeds its limit.", "unsupported-input");
@@ -127,9 +135,11 @@ export async function requestEvaluation(params: {
     const request = {
       url: endpoint,
       fetchImpl: globalThis.fetch,
-      requireHttps: !baseUrl,
-      ...(baseUrl ? { policy: { allowedOrigins: [baseUrl] } } : {}),
-      ...(baseUrl && new URL(baseUrl).hostname === "localhost"
+      requireHttps: apiRoot ? new URL(apiRoot).protocol === "https:" : !baseUrl,
+      ...(apiRoot || baseUrl
+        ? { policy: { allowedOrigins: [new URL(apiRoot || baseUrl!).origin] } }
+        : {}),
+      ...((apiRoot || baseUrl) && new URL(apiRoot || baseUrl!).hostname === "localhost"
         ? {
             // Keep localhost local even when system DNS or hosts entries override its meaning.
             lookupFn: async () => [
@@ -144,7 +154,7 @@ export async function requestEvaluation(params: {
       init: {
         method: "POST",
         headers: {
-          ...(!baseUrl ? { Authorization: `Bearer ${params.apiKey}` } : {}),
+          ...(!baseUrl && params.apiKey ? { Authorization: `Bearer ${params.apiKey}` } : {}),
           Accept: "application/json",
           "Content-Type": "application/json",
         },
@@ -152,7 +162,7 @@ export async function requestEvaluation(params: {
       },
     };
     const guarded = await fetchWithSsrFGuard(
-      !baseUrl && shouldUseEnvHttpProxyForUrl(endpoint)
+      !baseUrl && !apiRoot && shouldUseEnvHttpProxyForUrl(endpoint)
         ? withTrustedEnvProxyGuardedFetchMode(request)
         : request,
     );

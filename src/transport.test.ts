@@ -4,10 +4,16 @@ import { afterEach, expect, it, vi } from "vitest";
 import { MAX_JSON_BYTES } from "./schema.js";
 import { requestEvaluation } from "./transport.js";
 
+vi.mock("openclaw/plugin-sdk/ssrf-runtime", { spy: true });
+
 const request = {
   apiKey: "synthetic-key",
   timeoutMs: 1000,
-  body: { model: "jev-test", state: null, questions: { q: { type: "noul" as const } } },
+  body: {
+    model: "jev-test",
+    state: null,
+    questions: { q: { type: "noul" as const } },
+  },
 };
 function mockFetch(implementation: typeof globalThis.fetch) {
   const fetch = vi.fn(implementation);
@@ -27,14 +33,19 @@ it("never follows redirects to a credential sink", async () => {
         headers: { location: "https://other.example/credential-sink" },
       }),
   );
-  await expect(requestEvaluation(request)).rejects.toMatchObject({ reason: "transport" });
+  await expect(requestEvaluation(request)).rejects.toMatchObject({
+    reason: "transport",
+  });
   expect(fetch).toHaveBeenCalledOnce();
   expect(fetch.mock.calls[0]?.[0]).toBe("https://api.typesafe.ai/v1/systemone");
 });
 it("bounds the serialized request including its model field", async () => {
   const fetch = mockFetch(async () => new Response());
   await expect(
-    requestEvaluation({ ...request, body: { ...request.body, state: "x".repeat(MAX_JSON_BYTES) } }),
+    requestEvaluation({
+      ...request,
+      body: { ...request.body, state: "x".repeat(MAX_JSON_BYTES) },
+    }),
   ).rejects.toThrow("request exceeds");
   expect(fetch).not.toHaveBeenCalled();
 });
@@ -73,11 +84,36 @@ it("preserves bounded multi-chunk JSON responses", async () => {
   mockFetch(async () => new Response(body));
   await expect(requestEvaluation(request)).resolves.toEqual({ value: 0.37 });
 });
-it.each<{ status: number; reason: string; headers: HeadersInit; retryAfterMs?: number }>([
-  { status: 400, reason: "unsupported-input", headers: {}, retryAfterMs: undefined },
-  { status: 401, reason: "authentication", headers: {}, retryAfterMs: undefined },
-  { status: 413, reason: "unsupported-input", headers: {}, retryAfterMs: undefined },
-  { status: 422, reason: "unsupported-input", headers: {}, retryAfterMs: undefined },
+it.each<{
+  status: number;
+  reason: string;
+  headers: HeadersInit;
+  retryAfterMs?: number;
+}>([
+  {
+    status: 400,
+    reason: "unsupported-input",
+    headers: {},
+    retryAfterMs: undefined,
+  },
+  {
+    status: 401,
+    reason: "authentication",
+    headers: {},
+    retryAfterMs: undefined,
+  },
+  {
+    status: 413,
+    reason: "unsupported-input",
+    headers: {},
+    retryAfterMs: undefined,
+  },
+  {
+    status: 422,
+    reason: "unsupported-input",
+    headers: {},
+    retryAfterMs: undefined,
+  },
   {
     status: 429,
     reason: "rate-limited",
@@ -111,7 +147,11 @@ it.each<{ status: number; reason: string; headers: HeadersInit; retryAfterMs?: n
         }),
     );
     const error = await requestEvaluation(request).catch((caught: unknown) => caught);
-    expect(error).toMatchObject({ name: "EvaluationError", reason, retryAfterMs });
+    expect(error).toMatchObject({
+      name: "EvaluationError",
+      reason,
+      retryAfterMs,
+    });
     if (reason === "unsupported-input") {
       expect(error).toHaveProperty("message", "TypeSafe rejected the supplied input.");
     }
@@ -162,14 +202,20 @@ it.each([
         controller.abort("synthetic-private-abort");
       }
       return {
-        response: new Response(consumer, { status, headers: { "content-length": "1" } }),
+        response: new Response(consumer, {
+          status,
+          headers: { "content-length": "1" },
+        }),
         finalUrl: "https://api.typesafe.ai/v1/systemone",
         release,
         refreshTimeout: () => {},
       };
     });
     let settled = false;
-    const outcome = requestEvaluation({ ...request, signal: controller.signal }).then(
+    const outcome = requestEvaluation({
+      ...request,
+      signal: controller.signal,
+    }).then(
       (value) => {
         settled = true;
         return value;
@@ -209,3 +255,43 @@ it.each([
     }
   },
 );
+
+it.each(["http://decision.example/v1", "http://192.168.1.10/v1", "http://localhost.example/v1"])(
+  "rejects bearer credentials for non-loopback HTTP root %s before fetching",
+  async (apiBaseUrl) => {
+    const fetch = mockFetch(async () => new Response("{}"));
+    await expect(requestEvaluation({ ...request, apiBaseUrl })).rejects.toThrow("HTTPS");
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+
+it.each(["127.0.0.1", "localhost", "[::1]"])(
+  "preserves authenticated HTTP loopback API requests to %s",
+  async (hostname) => {
+    const fetch = mockFetch(async () => new Response("{}"));
+    await expect(
+      requestEvaluation({ ...request, apiBaseUrl: `http://${hostname}:8009/v1` }),
+    ).resolves.toEqual({});
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe(
+      "Bearer synthetic-key",
+    );
+    if (hostname === "localhost") {
+      const guarded = vi.mocked(ssrfRuntime.fetchWithSsrFGuard).mock.lastCall?.[0];
+      expect(guarded?.lookupFn).toBeTypeOf("function");
+      await expect(guarded?.lookupFn?.("localhost")).resolves.toEqual([
+        { address: "127.0.0.1", family: 4 },
+        { address: "::1", family: 6 },
+      ]);
+    }
+  },
+);
+
+it("permits an explicitly configured keyless HTTP API root without auth", async () => {
+  const fetch = mockFetch(async () => new Response("{}"));
+  await requestEvaluation({
+    ...request,
+    apiKey: undefined,
+    apiBaseUrl: "http://decision.example/v1",
+  });
+  expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).has("Authorization")).toBe(false);
+});
