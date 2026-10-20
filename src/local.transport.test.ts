@@ -22,7 +22,10 @@ const input = {
   model: "kev-latest",
   state: { message: "Synthetic outage" },
   questions: {
-    c: { type: "choice", criteria: { support: "Service outages", sales: null } },
+    c: {
+      type: "choice",
+      criteria: { support: "Service outages", sales: null },
+    },
     s: { type: "score", criteria: [null, { impact: ["widespread", true, 2] }] },
     b: { type: "noul", instructions: { question: "Escalate?" } },
   },
@@ -51,7 +54,10 @@ const localAnswer = {
 
 beforeEach(() => {
   vi.mocked(getPreparedPluginSecretInput).mockReset();
-  vi.mocked(getPreparedPluginSecretInput).mockReturnValue({ revision: 1, value: "hosted-secret" });
+  vi.mocked(getPreparedPluginSecretInput).mockReturnValue({
+    revision: 1,
+    value: "hosted-secret",
+  });
 });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -66,7 +72,11 @@ function registeredProvider(endpoint?: string) {
       config: {
         current: () => ({
           plugins: {
-            entries: { typesafe: { config: { baseUrl: endpoint, apiKey: "hosted-materialized" } } },
+            entries: {
+              typesafe: {
+                config: { baseUrl: endpoint, apiKey: "hosted-materialized" },
+              },
+            },
           },
         }),
       },
@@ -169,7 +179,12 @@ it("keeps hosted response validation strict and ignores stale keys even on direc
 it.each(["127.0.0.1", "localhost", "[::1]"])(
   "reaches a real %s server without ambient proxies or localhost DNS",
   async (hostname) => {
-    const received: { url?: string; authorization?: string; host?: string; body: string }[] = [];
+    const received: {
+      url?: string;
+      authorization?: string;
+      host?: string;
+      body: string;
+    }[] = [];
     const server = createServer((request, response) => {
       const chunks: Buffer[] = [];
       request.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -212,7 +227,10 @@ it.each(["127.0.0.1", "localhost", "[::1]"])(
         provider.evaluate(
           {
             ...input,
-            questions: { ...input.questions, b: { ...input.questions.b, type: "boolean" } },
+            questions: {
+              ...input.questions,
+              b: { ...input.questions.b, type: "boolean" },
+            },
           },
           {
             model: input.model,

@@ -73,7 +73,10 @@ it("preserves structured instructions, all criteria types, legends, and selected
         probabilities: { 0: 0.8, 1: 0.2 },
         legend: {
           0: { examples: ["No deadline stated"], level: "Routine" },
-          1: { examples: ["Immediate action explicitly requested"], level: "Urgent" },
+          1: {
+            examples: ["Immediate action explicitly requested"],
+            level: "Urgent",
+          },
         },
       },
       actionable: { type: "noul", noul: 0.9 },

@@ -34,7 +34,11 @@ const instructions = Type.Optional(
       "The complete judgment to make; question IDs are not read by the model. Text, structured object/array, or null. May be omitted when criteria express the judgment.",
   }),
 );
-const model = Type.String({ minLength: 1, maxLength: 128, pattern: "^[a-zA-Z0-9._/-]+$" });
+const model = Type.String({
+  minLength: 1,
+  maxLength: 128,
+  pattern: "^[a-zA-Z0-9._/-]+$",
+});
 const probability = Type.Number({ minimum: 0, maximum: 1 });
 const objectOptions = { additionalProperties: false };
 const noulQuestion = Type.Object(
@@ -154,8 +158,14 @@ const VendorResult = Type.Object(
     }),
     usage: Type.Object(
       {
-        input_tokens: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
-        output_tokens: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }),
+        input_tokens: Type.Integer({
+          minimum: 0,
+          maximum: Number.MAX_SAFE_INTEGER,
+        }),
+        output_tokens: Type.Integer({
+          minimum: 0,
+          maximum: Number.MAX_SAFE_INTEGER,
+        }),
       },
       objectOptions,
     ),

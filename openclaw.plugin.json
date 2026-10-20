@@ -2,17 +2,13 @@
   "id": "typesafe",
   "name": "TypeSafe AI",
   "description": "Typed decision provider for hosted Jev and local System One models.",
-  "categories": [
-    "developer-tools"
-  ],
+  "categories": ["developer-tools"],
   "enabledByDefault": false,
   "activation": {
     "onStartup": true
   },
   "contracts": {
-    "decisionProviders": [
-      "typesafe"
-    ]
+    "decisionProviders": ["typesafe"]
   },
   "configContracts": {
     "secretInputs": {
@@ -46,11 +42,7 @@
     "properties": {
       "apiKey": {
         "type": "object",
-        "required": [
-          "source",
-          "provider",
-          "id"
-        ],
+        "required": ["source", "provider", "id"],
         "properties": {
           "source": {
             "anyOf": [
@@ -105,11 +97,7 @@
       "id": "jev-latest",
       "name": "Jev",
       "capabilities": {
-        "questionTypes": [
-          "boolean",
-          "choice",
-          "score"
-        ],
+        "questionTypes": ["boolean", "choice", "score"],
         "maxQuestions": 256,
         "maxChoiceAlternatives": 255,
         "maxScoreLevels": 10,
@@ -121,11 +109,7 @@
       "id": "jev-1.13.0",
       "name": "Jev 1.13.0",
       "capabilities": {
-        "questionTypes": [
-          "boolean",
-          "choice",
-          "score"
-        ],
+        "questionTypes": ["boolean", "choice", "score"],
         "maxQuestions": 256,
         "maxChoiceAlternatives": 255,
         "maxScoreLevels": 10,
@@ -137,11 +121,7 @@
       "id": "kev-latest",
       "name": "Kev (local server)",
       "capabilities": {
-        "questionTypes": [
-          "boolean",
-          "choice",
-          "score"
-        ],
+        "questionTypes": ["boolean", "choice", "score"],
         "maxQuestions": 256,
         "maxChoiceAlternatives": 255,
         "maxScoreLevels": 10,

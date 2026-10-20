@@ -11,7 +11,9 @@ vi.mock("openclaw/plugin-sdk/secret-input-runtime", () => ({
 it("accepts only bounded source configuration and validates before reading credentials", () => {
   for (const source of ["store", "env", "file", "exec"]) {
     expect(
-      Check(ConfigSchema, { apiKey: { source, provider: "default", id: "TYPESAFE_API_KEY" } }),
+      Check(ConfigSchema, {
+        apiKey: { source, provider: "default", id: "TYPESAFE_API_KEY" },
+      }),
     ).toBe(true);
   }
   for (const config of [

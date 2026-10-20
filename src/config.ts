@@ -26,7 +26,36 @@ export const ConfigSchema = Type.Object(
   { additionalProperties: false },
 );
 
-export type RuntimeConfig = { apiKey?: string; baseUrl?: string; timeoutMs: number };
+export type RuntimeConfig = {
+  apiKey?: string;
+  baseUrl?: string;
+  apiBaseUrl?: string;
+  credentialsUnavailable?: boolean;
+  timeoutMs: number;
+};
+/** Standard provider API roots retain configured prefixes and imply /v1 for origins. */
+export function providerBaseUrl(value: string | undefined): string {
+  const parsed = value ? URL.parse(value) : null;
+  if (
+    !parsed ||
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.username ||
+    parsed.password ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error(
+      "Invalid models.providers.typesafe.baseUrl; use an HTTP(S) API root without credentials, query, or fragment.",
+    );
+  }
+  parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/v1";
+  return parsed.toString().replace(/\/+$/, "");
+}
+export function hasCredentials(config: RuntimeConfig): boolean {
+  return (
+    !config.credentialsUnavailable && Boolean(config.baseUrl || config.apiBaseUrl || config.apiKey)
+  );
+}
 
 /** A configured endpoint grants access to one loopback origin, never arbitrary private hosts. */
 export function localBaseUrl(value: unknown): string | undefined {
@@ -61,5 +90,8 @@ export function runtimeConfig(config: Record<string, unknown> | undefined): Runt
     return { baseUrl, timeoutMs };
   }
   const key = config?.apiKey;
-  return { apiKey: typeof key === "string" && key.trim() ? key : undefined, timeoutMs };
+  return {
+    apiKey: typeof key === "string" && key.trim() ? key : undefined,
+    timeoutMs,
+  };
 }

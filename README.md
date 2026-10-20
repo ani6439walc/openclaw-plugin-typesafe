@@ -29,3 +29,54 @@ selection labels requests and does not download or load a model.
 See the [TypeSafe AI setup guide](https://docs.openclaw.ai/plugins/typesafe) and
 [decision-model documentation](https://docs.openclaw.ai/concepts/decision-models)
 for configuration, rubrics, and API semantics.
+
+## Standalone fork and local development
+
+This repository maintains TypeSafe as a standalone OpenClaw plugin. It targets
+OpenClaw 2026.10.5 and loads the built `dist/index.js` entry. Use the pnpm release
+declared in `package.json`.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm format
+pnpm test
+pnpm build
+pnpm test:plugin-loader
+```
+
+## Custom System One provider
+
+Configure API-root routing with `models.providers.typesafe`, independently of
+the hosted plugin credential:
+
+```json
+{
+  "models": {
+    "providers": {
+      "typesafe": {
+        "baseUrl": "https://decision.example.com/typesafe/v1",
+        "apiKey": {
+          "source": "env",
+          "provider": "default",
+          "id": "SYSTEM_ONE_TOKEN"
+        },
+        "models": []
+      }
+    }
+  },
+  "plugins": { "entries": { "typesafe": { "enabled": true } } },
+  "agents": { "defaults": { "decisionModel": "typesafe/jev-latest" } }
+}
+```
+
+The adapter appends `/systemone`; origin-only URLs imply `/v1`. The host must
+prepare the provider credential. An unavailable configured credential fails
+closed, without inheriting the plugin key or falling back to hosted TypeSafe.
+Legacy plugin `baseUrl` remains loopback-only and unauthenticated. Requests keep
+HTTPS, exact-origin network policy, redirect rejection, deadlines, and strict
+hosted answer validation.
+
+This compatibility implementation supports API-root routing, prepared bearer
+credentials, and provider timeouts. Advanced `request`, custom `headers`, and
+`authHeader: false` overrides require a newer host SDK and are explicitly rejected.

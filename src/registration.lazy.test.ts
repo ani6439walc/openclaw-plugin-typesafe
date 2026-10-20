@@ -14,7 +14,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const batch = { state: "synthetic", questions: { q: { type: "boolean" as const } } };
+const batch = {
+  state: "synthetic",
+  questions: { q: { type: "boolean" as const } },
+};
 const context = (signal = new AbortController().signal) => ({
   model: "kev-latest",
   signal,
@@ -85,7 +88,9 @@ it.each(["abort", "deadline", "config", "credentials"] as const)(
       await expect(outcome).rejects.toThrow("caller closed");
     } else if (change === "config") {
       await expect(outcome).resolves.toMatchObject({ status: "ok" });
-      expect(evaluate.mock.lastCall?.[1]).toMatchObject({ baseUrl: "http://127.0.0.1:5678" });
+      expect(evaluate.mock.lastCall?.[1]).toMatchObject({
+        baseUrl: "http://127.0.0.1:5678",
+      });
     } else {
       await expect(outcome).resolves.toEqual({
         status: "unavailable",
