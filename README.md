@@ -129,7 +129,10 @@ To enable it:
 
 A missing key or disconnected repository fails with a setup message. Large diffs
 use a temporary `temp/pr-<number>-diff-<run-id>-<attempt>` branch that is removed after the review.
-The workflow waits for a reviewable session state and reads all activity pages.
+The workflow checks out the event's PR head, uses pinned base/head commits for
+large-diff fallback, waits for a reviewable session state, and reads all activity
+pages. The completed review is saved to the Actions step summary before posting
+the PR comment, so a delivery failure does not hide the result.
 It does not call undocumented pause/archive endpoints; workflow cancellation or
 timeout does not terminate the remote Jules session. Inspect the session link
 when a run times out.

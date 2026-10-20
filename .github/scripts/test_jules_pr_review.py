@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -109,6 +110,36 @@ class JulesPrReviewTest(unittest.TestCase):
         self.assertIn("github.run_attempt", workflow)
         self.assertIn('git push origin --delete "$DIFF_BRANCH"', workflow)
         self.assertNotIn("git branch -r", workflow)
+
+    def test_406_diff_fallback_uses_pinned_base_and_head(self):
+        with mock.patch.dict(os.environ, {"BASE_SHA": "base-pinned", "HEAD_SHA": "head-pinned", "BASE_REF": "main", "GITHUB_TOKEN": "synthetic"}):
+            with mock.patch.object(jules_pr_review, "request", side_effect=RuntimeError("406 diff too_large")):
+                with mock.patch.object(jules_pr_review.subprocess, "run", return_value=mock.Mock(stdout="pinned diff")) as run:
+                    self.assertEqual(jules_pr_review.get_pr_diff("owner", "repo", "2"), "pinned diff")
+        self.assertEqual(run.call_args.args[0], ["git", "diff", "base-pinned...head-pinned"])
+        self.assertEqual(run.call_args_list[0].args[0], ["git", "fetch", "origin", "base-pinned", "head-pinned"])
+
+    def test_checkout_and_comment_permissions_match_review_contract(self):
+        workflow = WORKFLOW.read_text()
+        self.assertIn("ref: ${{ github.event.pull_request.head.sha }}", workflow)
+        self.assertIn("  pull-requests: write\n", workflow)
+
+    def test_bold_verdicts_are_complete_reviews(self):
+        for verdict in ["**✅ Approve**", "**⚠️ Approve with comments**", "**❌ Request changes**", "__✅ Approve__"]:
+            with self.subTest(verdict=verdict):
+                review = "### Summary\nReview\n### 🔴 Blocking Issues\nNone\n### Verdict\n" + verdict
+                self.assertEqual(jules_pr_review.extract_review_from_activities({
+                    "activities": [{"agentMessaged": {"agentMessage": review}}]
+                }), review)
+
+    def test_failed_comment_delivery_preserves_review_in_step_summary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            summary = Path(directory) / "summary.md"
+            with mock.patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary), "GITHUB_TOKEN": "synthetic"}):
+                with mock.patch.object(jules_pr_review, "request", side_effect=RuntimeError("403 Resource not accessible by integration")):
+                    with self.assertRaises(RuntimeError):
+                        jules_pr_review.post_pr_comment("owner", "repo", "2", "Completed review")
+            self.assertIn("Completed review", summary.read_text())
 
     def test_push_failure_reports_sanitized_git_output(self):
         github_token = "github-token-secret"

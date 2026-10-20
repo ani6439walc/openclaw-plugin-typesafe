@@ -131,17 +131,20 @@ def get_pr_diff(owner, repo, pr_number):
     except RuntimeError as exc:
         if "406" in str(exc) or "too_large" in str(exc):
             log("GitHub API diff returned 406 (diff exceeded limit), falling back to git diff...")
-            base_ref = os.environ.get("BASE_REF", "main")
-            base_sha = os.environ.get("BASE_SHA")
-            subprocess.run(["git", "fetch", "origin", base_ref], check=False, capture_output=True)
-            if base_sha:
-                try:
-                    res = subprocess.run(["git", "diff", f"{base_sha}...HEAD"], capture_output=True, text=True, check=True)
-                    return res.stdout
-                except subprocess.CalledProcessError:
-                    pass
-            res = subprocess.run(["git", "diff", f"origin/{base_ref}...HEAD"], capture_output=True, text=True, check=True)
-            return res.stdout
+            base_sha = os.environ["BASE_SHA"]
+            head_sha = os.environ["HEAD_SHA"]
+            subprocess.run(
+                ["git", "fetch", "origin", base_sha, head_sha],
+                check=True,
+                capture_output=True,
+            )
+            result = subprocess.run(
+                ["git", "diff", f"{base_sha}...{head_sha}"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            return result.stdout
         raise
 
 
@@ -350,7 +353,7 @@ def extract_review_from_activities(activities_response):
         lines = text[verdict.end():].strip().splitlines()
         if lines and re.fullmatch(
             r"(?:(?:✅|⚠️|❌)\s*)?(?:Approve with comments|Approve|Request changes)(?:\s*[—:.-].*)?",
-            lines[0].strip(),
+            lines[0].replace("**", "").replace("__", "").strip(),
         ):
             return text
     return None
@@ -371,6 +374,10 @@ def post_pr_comment(owner, repo, pr_number, body):
 _Reviewed by Jules via GitHub Actions._
 """
 
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as output:
+            output.write(comment + "\n")
     url = f"{GITHUB_API}/repos/{owner}/{repo}/issues/{pr_number}/comments"
     return request("POST", url, github_headers(), {"body": comment})
 
