@@ -93,7 +93,9 @@ export async function requestEvaluation(params: {
   isAdmissible?: () => boolean;
 }): Promise<unknown> {
   const baseUrl = localBaseUrl(params.baseUrl);
-  const apiRoot = params.apiBaseUrl ? providerBaseUrl(params.apiBaseUrl) : undefined;
+  const apiRoot = params.apiBaseUrl
+    ? providerBaseUrl(params.apiBaseUrl, Boolean(params.apiKey))
+    : undefined;
   const endpoint = apiRoot
     ? `${apiRoot}/systemone`
     : baseUrl
@@ -137,7 +139,7 @@ export async function requestEvaluation(params: {
       ...(apiRoot || baseUrl
         ? { policy: { allowedOrigins: [new URL(apiRoot || baseUrl!).origin] } }
         : {}),
-      ...(baseUrl && new URL(baseUrl).hostname === "localhost"
+      ...((apiRoot || baseUrl) && new URL(apiRoot || baseUrl!).hostname === "localhost"
         ? {
             // Keep localhost local even when system DNS or hosts entries override its meaning.
             lookupFn: async () => [

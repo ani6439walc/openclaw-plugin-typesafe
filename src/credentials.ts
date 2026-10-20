@@ -23,7 +23,7 @@ export function resolveRuntimeConfig(
       mode: "inspect",
     });
     return {
-      apiBaseUrl: providerBaseUrl(provider.baseUrl),
+      apiBaseUrl: providerBaseUrl(provider.baseUrl, provider.apiKey !== undefined),
       apiKey: credential.value,
       credentialsUnavailable: credential.status === "configured_unavailable",
       timeoutMs: provider.timeoutSeconds === undefined ? timeoutMs : provider.timeoutSeconds * 1000,

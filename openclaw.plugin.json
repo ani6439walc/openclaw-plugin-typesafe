@@ -34,7 +34,7 @@
     },
     "baseUrl": {
       "label": "System One API root",
-      "help": "Optional HTTP(S) API root, such as https://decision.example.com/typesafe/v1. The plugin appends /systemone; an origin implies /v1. A bare loopback origin selects unauthenticated local Kev. Omit for hosted Jev."
+      "help": "Optional HTTP(S) API root, such as https://decision.example.com/typesafe/v1. The plugin appends /systemone; an origin implies /v1. A bare loopback origin selects unauthenticated local Kev. Omit for hosted Jev. Credentials require HTTPS except for loopback endpoints."
     }
   },
   "configSchema": {

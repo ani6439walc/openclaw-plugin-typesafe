@@ -255,3 +255,43 @@ it.each([
     }
   },
 );
+
+it.each(["http://decision.example/v1", "http://192.168.1.10/v1", "http://localhost.example/v1"])(
+  "rejects bearer credentials for non-loopback HTTP root %s before fetching",
+  async (apiBaseUrl) => {
+    const fetch = mockFetch(async () => new Response("{}"));
+    await expect(requestEvaluation({ ...request, apiBaseUrl })).rejects.toThrow("HTTPS");
+    expect(fetch).not.toHaveBeenCalled();
+  },
+);
+
+it.each(["127.0.0.1", "localhost", "[::1]"])(
+  "preserves authenticated HTTP loopback API requests to %s",
+  async (hostname) => {
+    const fetch = mockFetch(async () => new Response("{}"));
+    await expect(
+      requestEvaluation({ ...request, apiBaseUrl: `http://${hostname}:8009/v1` }),
+    ).resolves.toEqual({});
+    expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe(
+      "Bearer synthetic-key",
+    );
+    if (hostname === "localhost") {
+      const guarded = vi.mocked(ssrfRuntime.fetchWithSsrFGuard).mock.lastCall?.[0];
+      expect(guarded?.lookupFn).toBeTypeOf("function");
+      await expect(guarded?.lookupFn?.("localhost")).resolves.toEqual([
+        { address: "127.0.0.1", family: 4 },
+        { address: "::1", family: 6 },
+      ]);
+    }
+  },
+);
+
+it("permits an explicitly configured keyless HTTP API root without auth", async () => {
+  const fetch = mockFetch(async () => new Response("{}"));
+  await requestEvaluation({
+    ...request,
+    apiKey: undefined,
+    apiBaseUrl: "http://decision.example/v1",
+  });
+  expect(new Headers(fetch.mock.calls[0]?.[1]?.headers).has("Authorization")).toBe(false);
+});

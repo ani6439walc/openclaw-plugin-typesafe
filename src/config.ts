@@ -36,7 +36,7 @@ export type RuntimeConfig = {
   timeoutMs: number;
 };
 /** Standard provider API roots retain configured prefixes and imply /v1 for origins. */
-export function providerBaseUrl(value: unknown): string {
+export function providerBaseUrl(value: unknown, authenticated = false): string {
   const parsed =
     typeof value === "string" &&
     value.length <= 2048 &&
@@ -55,6 +55,13 @@ export function providerBaseUrl(value: unknown): string {
     throw new Error(
       "Invalid TypeSafe baseUrl; use an HTTP(S) API root without credentials, query, or fragment.",
     );
+  }
+  if (
+    authenticated &&
+    parsed.protocol !== "https:" &&
+    !["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)
+  ) {
+    throw new Error("TypeSafe credentials require HTTPS except for loopback endpoints.");
   }
   parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/v1";
   return parsed.toString().replace(/\/+$/, "");
@@ -90,7 +97,9 @@ export function runtimeConfig(config: Record<string, unknown> | undefined): Runt
       ? localBaseUrl(configuredUrl)
       : undefined;
   const apiBaseUrl =
-    configuredUrl !== undefined && !baseUrl ? providerBaseUrl(configuredUrl) : undefined;
+    configuredUrl !== undefined && !baseUrl
+      ? providerBaseUrl(configuredUrl, config?.apiKey !== undefined)
+      : undefined;
   const timeoutMs = config?.timeoutMs ?? 30000;
   if (
     typeof timeoutMs !== "number" ||

@@ -124,28 +124,22 @@ def push_diff_branch(branch_name):
         ) from error
 
 
-def get_pr_diff(owner, repo, pr_number):
-    url = f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}"
-    try:
-        return request("GET", url, github_headers("application/vnd.github.v3.diff"))
-    except RuntimeError as exc:
-        if "406" in str(exc) or "too_large" in str(exc):
-            log("GitHub API diff returned 406 (diff exceeded limit), falling back to git diff...")
-            base_sha = os.environ["BASE_SHA"]
-            head_sha = os.environ["HEAD_SHA"]
-            subprocess.run(
-                ["git", "fetch", "origin", base_sha, head_sha],
-                check=True,
-                capture_output=True,
-            )
-            result = subprocess.run(
-                ["git", "diff", f"{base_sha}...{head_sha}"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            return result.stdout
-        raise
+def get_pr_diff():
+    """Review exactly the event commits, never the PR API's mutable latest diff."""
+    base_sha = os.environ["BASE_SHA"]
+    head_sha = os.environ["HEAD_SHA"]
+    subprocess.run(
+        ["git", "fetch", "origin", base_sha, head_sha],
+        check=True,
+        capture_output=True,
+    )
+    result = subprocess.run(
+        ["git", "diff", f"{base_sha}...{head_sha}"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
 
 
 def create_diff_branch(pr_number, diff_text):
@@ -402,7 +396,7 @@ def main():
     pr_number = os.environ["PR_NUMBER"]
 
     log(f"Fetching diff for PR #{pr_number}...")
-    diff_text = get_pr_diff(owner, repo, pr_number)
+    diff_text = get_pr_diff()
     if not diff_text.strip():
         log("No diff found, posting comment and exiting.")
         post_pr_comment(owner, repo, pr_number, "No diff was found for this pull request.")

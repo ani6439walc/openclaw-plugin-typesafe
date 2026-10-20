@@ -234,3 +234,27 @@ it("uses prepared plugin auth for a loopback API path without selecting local Ke
   expect(config.apiKey).toBe("loopback-token");
   expect(config.baseUrl).toBeUndefined();
 });
+
+it("rejects plugin credentials on remote HTTP before reading the prepared secret", () => {
+  expect(() =>
+    resolveRuntimeConfig({
+      plugins: {
+        entries: {
+          typesafe: { config: { ...pluginEndpoint, baseUrl: "http://decision.example/v1" } },
+        },
+      },
+    }),
+  ).toThrow("HTTPS");
+  expect(getPreparedPluginSecretInput).not.toHaveBeenCalled();
+});
+it("rejects legacy provider credentials on remote HTTP", () => {
+  expect(() =>
+    resolveRuntimeConfig({
+      models: {
+        providers: {
+          typesafe: { baseUrl: "http://decision.example/v1", apiKey: "synthetic-key", models: [] },
+        },
+      },
+    }),
+  ).toThrow("HTTPS");
+});

@@ -87,8 +87,9 @@ No `models.providers.typesafe` entry is required:
 }
 ```
 
-The adapter appends `/systemone`; origin-only URLs imply `/v1`. Use HTTPS for
-remote credentials. `apiKey` accepts a SecretRef prepared by the host, never a
+The adapter appends `/systemone`; origin-only URLs imply `/v1`. Authenticated non-loopback API roots must use HTTPS. HTTP with a credential
+is allowed only for `localhost`, `127.0.0.1`, or `[::1]`; `localhost` resolution
+is pinned to loopback addresses. `apiKey` accepts a SecretRef prepared by the host, never a
 plaintext key. An unavailable configured credential fails closed. Omitting
 `apiKey` supports an unauthenticated custom endpoint without inheriting a key
 from another route. `timeoutMs` controls the plugin request timeout.
@@ -106,7 +107,9 @@ credentials, and provider timeouts. Advanced `request`, custom `headers`, and
 `authHeader: false` provider overrides require a newer host SDK and are rejected.
 
 Requests retain exact-origin network policy, redirect rejection, deadlines,
-response-size limits, and strict answer validation.
+response-size limits, and strict answer validation. Custom API roots bypass
+ambient `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` settings; default hosted
+requests retain trusted environment-proxy handling.
 
 ## GitHub checks and Jules review
 
@@ -129,9 +132,9 @@ To enable it:
 
 A missing key or disconnected repository fails with a setup message. Large diffs
 use a temporary `temp/pr-<number>-diff-<run-id>-<attempt>` branch that is removed after the review.
-The workflow checks out the event's PR head, uses pinned base/head commits for
-large-diff fallback, waits for a reviewable session state, and reads all activity
-pages. The completed review is saved to the Actions step summary before posting
+The workflow checks out the event's PR head and constructs every diff from the
+pinned base/head commits, without querying the mutable PR diff API. It waits for
+a reviewable session state and reads all activity pages. The completed review is saved to the Actions step summary before posting
 the PR comment, so a delivery failure does not hide the result.
 It does not call undocumented pause/archive endpoints; workflow cancellation or
 timeout does not terminate the remote Jules session. Inspect the session link

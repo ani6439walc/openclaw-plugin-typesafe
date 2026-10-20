@@ -111,11 +111,12 @@ class JulesPrReviewTest(unittest.TestCase):
         self.assertIn('git push origin --delete "$DIFF_BRANCH"', workflow)
         self.assertNotIn("git branch -r", workflow)
 
-    def test_406_diff_fallback_uses_pinned_base_and_head(self):
-        with mock.patch.dict(os.environ, {"BASE_SHA": "base-pinned", "HEAD_SHA": "head-pinned", "BASE_REF": "main", "GITHUB_TOKEN": "synthetic"}):
-            with mock.patch.object(jules_pr_review, "request", side_effect=RuntimeError("406 diff too_large")):
+    def test_normal_diff_path_uses_pinned_commits_not_mutable_pr_api(self):
+        with mock.patch.dict(os.environ, {"BASE_SHA": "base-pinned", "HEAD_SHA": "head-pinned", "BASE_REF": "moved-main", "GITHUB_TOKEN": "synthetic"}):
+            with mock.patch.object(jules_pr_review, "request", return_value="mutable PR diff") as request:
                 with mock.patch.object(jules_pr_review.subprocess, "run", return_value=mock.Mock(stdout="pinned diff")) as run:
-                    self.assertEqual(jules_pr_review.get_pr_diff("owner", "repo", "2"), "pinned diff")
+                    self.assertEqual(jules_pr_review.get_pr_diff(), "pinned diff")
+        request.assert_not_called()
         self.assertEqual(run.call_args.args[0], ["git", "diff", "base-pinned...head-pinned"])
         self.assertEqual(run.call_args_list[0].args[0], ["git", "fetch", "origin", "base-pinned", "head-pinned"])
 
