@@ -2,10 +2,12 @@ import { Type } from "typebox";
 
 const LOCAL_BASE_URL_PATTERN =
   "^https?://(?:localhost|127\\.0\\.0\\.1|\\[::1\\])(?::[0-9]{1,5})?/?$";
+const API_BASE_URL_PATTERN = "^https?://[^\\s/@?#]+(?:/[^\\s?#]*)?$";
+const apiBaseUrlPattern = new RegExp(API_BASE_URL_PATTERN);
 const localBaseUrlPattern = new RegExp(LOCAL_BASE_URL_PATTERN);
 export const ConfigSchema = Type.Object(
   {
-    baseUrl: Type.Optional(Type.String({ maxLength: 128, pattern: LOCAL_BASE_URL_PATTERN })),
+    baseUrl: Type.Optional(Type.String({ maxLength: 2048, pattern: API_BASE_URL_PATTERN })),
     apiKey: Type.Optional(
       Type.Object(
         {
@@ -34,8 +36,14 @@ export type RuntimeConfig = {
   timeoutMs: number;
 };
 /** Standard provider API roots retain configured prefixes and imply /v1 for origins. */
-export function providerBaseUrl(value: string | undefined): string {
-  const parsed = value ? URL.parse(value) : null;
+export function providerBaseUrl(value: unknown): string {
+  const parsed =
+    typeof value === "string" &&
+    value.length <= 2048 &&
+    apiBaseUrlPattern.test(value) &&
+    !value.includes("\\")
+      ? URL.parse(value)
+      : null;
   if (
     !parsed ||
     !["http:", "https:"].includes(parsed.protocol) ||
@@ -45,7 +53,7 @@ export function providerBaseUrl(value: string | undefined): string {
     parsed.hash
   ) {
     throw new Error(
-      "Invalid models.providers.typesafe.baseUrl; use an HTTP(S) API root without credentials, query, or fragment.",
+      "Invalid TypeSafe baseUrl; use an HTTP(S) API root without credentials, query, or fragment.",
     );
   }
   parsed.pathname = parsed.pathname.replace(/\/+$/, "") || "/v1";
@@ -76,7 +84,13 @@ export function localBaseUrl(value: unknown): string | undefined {
 
 /** Validate runtime settings and recognize materialized credentials without resolving inputs. */
 export function runtimeConfig(config: Record<string, unknown> | undefined): RuntimeConfig {
-  const baseUrl = localBaseUrl(config?.baseUrl);
+  const configuredUrl = config?.baseUrl;
+  const baseUrl =
+    typeof configuredUrl === "string" && localBaseUrlPattern.test(configuredUrl)
+      ? localBaseUrl(configuredUrl)
+      : undefined;
+  const apiBaseUrl =
+    configuredUrl !== undefined && !baseUrl ? providerBaseUrl(configuredUrl) : undefined;
   const timeoutMs = config?.timeoutMs ?? 30000;
   if (
     typeof timeoutMs !== "number" ||
@@ -91,6 +105,7 @@ export function runtimeConfig(config: Record<string, unknown> | undefined): Runt
   }
   const key = config?.apiKey;
   return {
+    ...(apiBaseUrl ? { apiBaseUrl } : {}),
     apiKey: typeof key === "string" && key.trim() ? key : undefined,
     timeoutMs,
   };

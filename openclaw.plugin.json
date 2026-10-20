@@ -25,7 +25,7 @@
   "uiHints": {
     "apiKey": {
       "label": "TypeSafe API credential",
-      "help": "Hosted Jev only. Select a SecretRef in Settings \u2192 Secrets. Ignored for a local baseUrl. Never paste credentials in chat.",
+      "help": "Select a SecretRef in Settings → Secrets for hosted Jev or a custom API root. Ignored for a bare loopback origin (local Kev). Never paste credentials in chat.",
       "sensitive": true
     },
     "timeoutMs": {
@@ -33,8 +33,8 @@
       "advanced": true
     },
     "baseUrl": {
-      "label": "Local System One origin",
-      "help": "Optional loopback origin, such as http://127.0.0.1:8009, for a running Kev server. Omit for hosted Jev. Local requests do not use the TypeSafe credential; the server chooses the loaded checkpoint."
+      "label": "System One API root",
+      "help": "Optional HTTP(S) API root, such as https://decision.example.com/typesafe/v1. The plugin appends /systemone; an origin implies /v1. A bare loopback origin selects unauthenticated local Kev. Omit for hosted Jev."
     }
   },
   "configSchema": {
@@ -85,8 +85,8 @@
       },
       "baseUrl": {
         "type": "string",
-        "maxLength": 128,
-        "pattern": "^https?://(?:localhost|127\\.0\\.0\\.1|\\[::1\\])(?::[0-9]{1,5})?/?$"
+        "maxLength": 2048,
+        "pattern": "^https?://[^\\s/@?#]+(?:/[^\\s?#]*)?$"
       }
     },
     "additionalProperties": false

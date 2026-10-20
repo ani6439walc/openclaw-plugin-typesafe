@@ -9,7 +9,7 @@ export function resolveRuntimeConfig(
 ): RuntimeConfig {
   const configured = snapshot.plugins?.entries?.typesafe?.config;
   const provider = snapshot.models?.providers?.typesafe;
-  if (provider) {
+  if (provider && configured?.baseUrl === undefined && configured?.apiKey === undefined) {
     // This compatibility backport supports API-root routing and prepared bearer auth.
     // Other shared provider transport overrides require a newer host SDK.
     if (provider.request || provider.headers || provider.authHeader === false) {
@@ -34,5 +34,10 @@ export function resolveRuntimeConfig(
     return validated;
   }
   const prepared = getPreparedPluginSecretInput("typesafe", "apiKey");
-  return { ...validated, apiKey: prepared.value };
+  return {
+    ...validated,
+    // A custom keyless endpoint must not inherit a stale hosted credential.
+    apiKey: configured?.apiKey === undefined && validated.apiBaseUrl ? undefined : prepared.value,
+    credentialsUnavailable: configured?.apiKey !== undefined && !prepared.value,
+  };
 }

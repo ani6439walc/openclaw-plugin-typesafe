@@ -1,14 +1,13 @@
 # TypeSafe AI for OpenClaw
 
-Official external plugin for typed decisions with hosted TypeSafe AI Jev models
+Standalone fork of the external plugin for typed decisions with hosted TypeSafe AI Jev models
 or a local Kev System One server.
 It provides Choice, Score, and Boolean judgments through OpenClaw's shared
 decision-model API. Core supplies the provider-neutral `decision_evaluate` agent
 tool when the agent has an effective `decisionModel` selection, subject to normal
 tool policy and harness capabilities. No separate tool enablement is required.
 
-Requires OpenClaw and plugin API **2026.9.6 or later**. Released OpenClaw
-2026.9.5 does not include the decision API.
+This fork targets OpenClaw **2026.10.5**.
 
 ```sh
 openclaw plugins install @openclaw/typesafe
@@ -47,36 +46,47 @@ pnpm test:plugin-loader
 
 ## Custom System One provider
 
-Configure API-root routing with `models.providers.typesafe`, independently of
-the hosted plugin credential:
+Configure the endpoint and its credential directly in the plugin settings.
+No `models.providers.typesafe` entry is required:
 
 ```json
 {
-  "models": {
-    "providers": {
+  "plugins": {
+    "entries": {
       "typesafe": {
-        "baseUrl": "https://decision.example.com/typesafe/v1",
-        "apiKey": {
-          "source": "env",
-          "provider": "default",
-          "id": "SYSTEM_ONE_TOKEN"
-        },
-        "models": []
+        "enabled": true,
+        "config": {
+          "baseUrl": "https://decision.example.com/typesafe/v1",
+          "apiKey": {
+            "source": "env",
+            "provider": "default",
+            "id": "SYSTEM_ONE_TOKEN"
+          }
+        }
       }
     }
   },
-  "plugins": { "entries": { "typesafe": { "enabled": true } } },
   "agents": { "defaults": { "decisionModel": "typesafe/jev-latest" } }
 }
 ```
 
-The adapter appends `/systemone`; origin-only URLs imply `/v1`. The host must
-prepare the provider credential. An unavailable configured credential fails
-closed, without inheriting the plugin key or falling back to hosted TypeSafe.
-Legacy plugin `baseUrl` remains loopback-only and unauthenticated. Requests keep
-HTTPS, exact-origin network policy, redirect rejection, deadlines, and strict
-hosted answer validation.
+The adapter appends `/systemone`; origin-only URLs imply `/v1`. Use HTTPS for
+remote credentials. `apiKey` accepts a SecretRef prepared by the host, never a
+plaintext key. An unavailable configured credential fails closed. Omitting
+`apiKey` supports an unauthenticated custom endpoint without inheriting a key
+from another route. `timeoutMs` controls the plugin request timeout.
 
-This compatibility implementation supports API-root routing, prepared bearer
+Bare loopback origins retain the local Kev behavior described above: no
+credential is sent and local answer conversion is used. To use an authenticated
+API with hosted Jev response semantics on loopback, include its API path, such as
+`http://127.0.0.1:8009/v1`.
+
+Explicit plugin `baseUrl` or `apiKey` takes priority over the legacy
+`models.providers.typesafe` entry; endpoint and credentials are never merged
+across those settings. The provider entry remains a compatibility fallback when
+both plugin fields are absent. It supports API-root routing, prepared bearer
 credentials, and provider timeouts. Advanced `request`, custom `headers`, and
-`authHeader: false` overrides require a newer host SDK and are explicitly rejected.
+`authHeader: false` provider overrides require a newer host SDK and are rejected.
+
+Requests retain exact-origin network policy, redirect rejection, deadlines,
+response-size limits, and strict answer validation.

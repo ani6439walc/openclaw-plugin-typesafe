@@ -6,7 +6,7 @@ import { getPreparedPluginSecretInput } from "openclaw/plugin-sdk/secret-input-r
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import plugin from "../index.js";
 import { evaluate } from "./client.js";
-import { runtimeConfig } from "./config.js";
+import { localBaseUrl, runtimeConfig } from "./config.js";
 import type { EvaluationInput } from "./schema.js";
 
 vi.mock("openclaw/plugin-sdk/secret-input-runtime", () => ({
@@ -129,7 +129,7 @@ it.each([
   "http://localhost.:8009",
   null,
 ])("rejects non-origin, non-loopback, or ambiguous endpoint %s", (url) => {
-  expect(() => runtimeConfig({ baseUrl: url })).toThrow("baseUrl");
+  expect(() => localBaseUrl(url)).toThrow("baseUrl");
 });
 
 it.each([
