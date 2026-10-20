@@ -107,3 +107,29 @@ credentials, and provider timeouts. Advanced `request`, custom `headers`, and
 
 Requests retain exact-origin network policy, redirect rejection, deadlines,
 response-size limits, and strict answer validation.
+
+## GitHub checks and Jules review
+
+CI runs formatting, type checks, Vitest, review-script tests, build, loader checks,
+and a package dry run on Node.js 24 and 26 for PRs targeting `main` and pushes to
+`main`.
+
+Jules review runs when a same-repository PR is opened, updated, or reopened by
+the owner or a trusted collaborator. It posts an advisory review comment; it does
+not approve or merge the PR.
+
+To enable it:
+
+1. Connect this repository through the Jules GitHub app so it appears in the
+   [Jules Sources API](https://jules.google/docs/api/reference/sources/).
+2. Add `JULES_API_KEY` as a repository Actions secret using your
+   [Jules API key](https://jules.google/docs/api/reference/authentication/).
+3. Ensure GitHub Actions is enabled and permits the workflow's contents and
+   issue-comment write permissions, then update or reopen the PR.
+
+A missing key or disconnected repository fails with a setup message. Large diffs
+use a temporary `temp/pr-<number>-diff-<run-id>-<attempt>` branch that is removed after the review.
+The workflow waits for a reviewable session state and reads all activity pages.
+It does not call undocumented pause/archive endpoints; workflow cancellation or
+timeout does not terminate the remote Jules session. Inspect the session link
+when a run times out.
