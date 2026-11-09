@@ -8,7 +8,7 @@ maintained under `ani6439walc`. It is not the official OpenClaw distribution.
 
 - **Upstream baseline:** OpenClaw `v2026.10.5`.
 - **Upstream commit:** `1b58cb9a1b4f4353e1add63c8506db4d890962e8`.
-- **Current plugin version:** `2026.10.5`, inherited unchanged from upstream `package.json`.
+- **Current plugin version:** `2026.11.2`, aligned with `package.json`.
 - **Fork release:** No separate fork release or version tag has been published yet.
 
 The initial import preserved all 24 upstream files byte-for-byte. Subsequent fork
@@ -24,7 +24,7 @@ decision-model API. Core supplies the provider-neutral `decision_evaluate` agent
 tool when the agent has an effective `decisionModel` selection, subject to normal
 tool policy and harness capabilities. No separate tool enablement is required.
 
-This fork targets OpenClaw **2026.10.5**.
+This fork targets OpenClaw **2026.11.2**.
 
 ```sh
 openclaw plugins install @openclaw/typesafe
@@ -49,7 +49,7 @@ for configuration, rubrics, and API semantics.
 ## Standalone fork and local development
 
 This repository maintains TypeSafe as a standalone OpenClaw plugin. It targets
-OpenClaw 2026.10.5 and loads the built `dist/index.js` entry. Use the pnpm release
+OpenClaw 2026.11.2 and loads the built `dist/index.js` entry. Use the pnpm release
 declared in `package.json`.
 
 ```sh

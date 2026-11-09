@@ -1,5 +1,6 @@
-// Narrow declarations for exports missing .d.ts files in OpenClaw 2026.10.5.
-// Signatures checked against the v2026.10.5 source tag.
+// Narrow declarations for exports still missing .d.ts files in OpenClaw 2026.11.2.
+// Signatures originally checked against the v2026.10.5 source tag.
+// Retain until the SDK publishes matching declarations.
 declare module "openclaw/plugin-sdk/fetch-runtime" {
   import type { fetchWithSsrFGuard } from "openclaw/plugin-sdk/ssrf-runtime";
   type GuardedFetchOptions = Parameters<typeof fetchWithSsrFGuard>[0];
