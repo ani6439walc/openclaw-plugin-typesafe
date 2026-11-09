@@ -5,5 +5,5 @@ allowBuilds:
   openclaw: true
   protobufjs: true
 minimumReleaseAgeExclude:
-  - openclaw@2026.11.1
-  - "@openclaw/ai@2026.11.1"
+  - openclaw@2026.11.2
+  - "@openclaw/ai@2026.11.2"
