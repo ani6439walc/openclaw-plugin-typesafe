@@ -1,6 +1,6 @@
 {
   "name": "typesafe",
-  "version": "2026.11.3",
+  "version": "2026.11.4",
   "description": "OpenClaw TypeSafe typed decision provider",
   "repository": {
     "type": "git",
@@ -14,19 +14,19 @@
     "@types/node": "26.6.4",
     "typescript": "7.0.2",
     "vitest": "5.0.5",
-    "prettier": "3.10.0"
+    "prettier": "3.10.1"
   },
   "openclaw": {
     "extensions": [
       "./dist/index.js"
     ],
     "compat": {
-      "pluginApi": ">=2026.11.3",
-      "minGatewayVersion": "2026.11.3"
+      "pluginApi": ">=2026.11.4",
+      "minGatewayVersion": "2026.11.4"
     },
     "build": {
-      "openclawVersion": "2026.11.3",
-      "pluginSdkVersion": "2026.11.3"
+      "openclawVersion": "2026.11.4",
+      "pluginSdkVersion": "2026.11.4"
     }
   },
   "displayName": "TypeSafe AI",
@@ -43,7 +43,7 @@
     "test:plugin-loader": "node --input-type=module --eval \"import { createRequire } from 'node:module'; const require = createRequire(import.meta.url); require('./dist/index.js');\""
   },
   "peerDependencies": {
-    "openclaw": "2026.11.3"
+    "openclaw": "2026.11.4"
   },
   "files": [
     "README.md",
